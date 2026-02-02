@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Ponto Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-slate-900 p-4">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 text-white mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h1 class="text-4xl font-bold text-white">Ponto<span class="text-blue-400">Digital</span></h1>
+            <p class="text-blue-200 mt-2">Selecione seu tipo de acesso</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <!-- TABS -->
+            <div class="flex border-b mb-6">
+                <button id="tabAdmin" class="flex-1 py-2 text-center font-medium border-b-2 border-blue-600 text-blue-600">Administrador</button>
+                <button id="tabEmployee" class="flex-1 py-2 text-center font-medium text-gray-500">Funcionário</button>
+            </div>
+
+            <!-- ADMIN FORM -->
+            <form id="adminForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha de Acesso</label>
+                    <input type="password" id="adminPassword" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all">
+                    Entrar no Painel
+                </button>
+                <p id="adminError" class="text-red-500 text-sm text-center hidden"></p>
+            </form>
+
+            <!-- EMPLOYEE FORM -->
+            <form id="employeeForm" class="space-y-6 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                    <input type="text" id="employeeName" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Digite seu nome" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all">
+                    Ver Meus Registros
+                </button>
+                <p id="employeeError" class="text-red-500 text-sm text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+
+        const tabAdmin = document.getElementById('tabAdmin');
+        const tabEmployee = document.getElementById('tabEmployee');
+        const adminForm = document.getElementById('adminForm');
+        const employeeForm = document.getElementById('employeeForm');
+
+        function switchTab(activeTab) {
+            if (activeTab === 'admin') {
+                tabAdmin.classList.add('border-blue-600', 'text-blue-600');
+                tabAdmin.classList.remove('text-gray-500');
+                tabEmployee.classList.remove('border-blue-600', 'text-blue-600');
+                tabEmployee.classList.add('text-gray-500');
+                adminForm.classList.remove('hidden');
+                employeeForm.classList.add('hidden');
+            } else {
+                tabEmployee.classList.add('border-blue-600', 'text-blue-600');
+                tabEmployee.classList.remove('text-gray-500');
+                tabAdmin.classList.remove('border-blue-600', 'text-blue-600');
+                tabAdmin.classList.add('text-gray-500');
+                employeeForm.classList.remove('hidden');
+                adminForm.classList.add('hidden');
+            }
+        }
+
+        tabAdmin.addEventListener('click', () => switchTab('admin'));
+        tabEmployee.addEventListener('click', () => switchTab('employee'));
+
+        // Check for redirect param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('redirect') === 'employee') {
+            switchTab('employee');
+        }
+
+        // Admin Login
+        adminForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            const errorP = document.getElementById('adminError');
+            errorP.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${API_URL}/login/admin`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ senha: password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    window.location.href = 'admin.html';
+                } else {
+                    errorP.innerText = data.message || 'Senha incorreta.';
+                    errorP.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorP.innerText = 'Erro de conexão. Entrando em modo de demonstração...';
+                errorP.classList.remove('hidden');
+                // MODO OFFLINE / DEMO: Permite entrar se der erro de conexão
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                // Aguarda um pouco para o usuário ler a mensagem antes de redirecionar
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1500);
+            }
+        });
+
+        // Employee Login
+        employeeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('employeeName').value.trim();
+            const errorP = document.getElementById('employeeError');
+            errorP.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${API_URL}/login/funcionario`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    sessionStorage.setItem('employeeName', data.nome);
+                    window.location.href = 'funcionario.html';
+                } else {
+                    errorP.innerText = data.message || 'Funcionário não encontrado.';
+                    errorP.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorP.innerText = 'Erro de conexão com o servidor.';
+                errorP.classList.remove('hidden');
+            }
+        });
+
+    </script>
+
+</body>
+</html>

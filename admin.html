@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Ponto Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 antialiased transition-colors duration-300">
+
+    <!-- MAIN APP -->
+    <div id="adminContent" class="flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 text-gray-600 dark:text-white border-r border-gray-200 dark:border-slate-800 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <span class="text-xl font-bold tracking-wide">Ponto<span class="text-blue-400">Digital</span></span>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span class="font-medium">Dashboard</span>
+                </button>
+                <button onclick="showSection('funcionarios')" id="nav-funcionarios" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span class="font-medium">Funcionários</span>
+                </button>
+                <button onclick="showSection('registros')" id="nav-registros" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="font-medium">Registros</span>
+                </button>
+                <button onclick="showSection('configuracoes')" id="nav-configuracoes" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-medium">Configurações</span>
+                </button>
+                <button onclick="showSection('manual')" id="nav-manual" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-50 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span class="font-medium">Manual</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100 dark:border-slate-800">
+                <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-600/10 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Sair do Sistema</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <div class="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+            
+            <!-- OFFLINE BANNER -->
+            <div id="offlineBanner" class="hidden bg-yellow-500 text-white text-center p-2 font-semibold z-30">
+                Modo de Demonstração (Offline)
+            </div>
+
+            <!-- TOPBAR MOBILE -->
+            <header class="md:hidden bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center justify-between z-30">
+                <span class="font-bold text-lg text-slate-800 dark:text-white">Ponto Digital</span>
+                <button onclick="toggleSidebar()" class="text-gray-600 hover:text-blue-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </header>
+
+            <!-- MAIN SCROLLABLE CONTENT -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50 dark:bg-gray-900">
+                
+                <!-- DASHBOARD SECTION -->
+                <div id="dashboard" class="section fade-in space-y-8">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Visão Geral</h2>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-sm border border-gray-100 dark:border-gray-700" id="currentDateDisplay"></span>
+                    </div>
+
+                    <!-- Alerts Section -->
+                    <div id="alertsSection" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm leading-5 font-medium text-yellow-800">
+                                    Atenção: Funcionários ausentes hoje
+                                </h3>
+                                <div class="mt-2 text-sm leading-5 text-yellow-700">
+                                    <ul id="listaAusentes" class="list-disc pl-5 space-y-1">
+                                        <!-- JS Content -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Incomplete Records Alert -->
+                    <div id="alertsIncompleteSection" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm leading-5 font-medium text-red-800">
+                                    Atenção: Registros Incompletos (Últimos 7 dias)
+                                </h3>
+                                <div class="mt-2 text-sm leading-5 text-red-700">
+                                    <ul id="listaIncompletos" class="list-disc pl-5 space-y-1">
+                                        <!-- JS Content -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow duration-300 flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total de Funcionários</p>
+                                <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="totalFuncionarios">-</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow duration-300 flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Registros Hoje</p>
+                                <h3 class="text-3xl font-bold text-green-600 dark:text-green-400" id="registrosHoje">-</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-green-50 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Weekly Chart -->
+                        <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-800 dark:text-white">Frequência Semanal</h3>
+                                <button onclick="downloadChart()" class="text-gray-400 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Baixar Gráfico">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </button>
+                            </div>
+                            <div class="relative h-64 w-full">
+                                <canvas id="weeklyChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Pie Chart -->
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h3 class="font-bold text-gray-800 dark:text-white mb-4">Pontualidade Hoje</h3>
+                            <div class="relative h-64 w-full flex items-center justify-center">
+                                <canvas id="punctualityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Table -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <h3 class="font-bold text-gray-800 dark:text-white">Últimos Registros</h3>
+                            <button onclick="loadDashboard()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Atualizar</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs uppercase font-semibold tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left">Funcionário</th>
+                                        <th class="px-6 py-4 text-left">Horário</th>
+                                        <th class="px-6 py-4 text-left">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-700" id="listaRegistrosRecentes">
+                                    <!-- JS Content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FUNCIONARIOS SECTION -->
+                <div id="funcionarios" class="section hidden fade-in space-y-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Funcionários</h2>
+                        <button id="btnSync" onclick="syncOfflineData()" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-yellow-500/20 transition-all duration-200 flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Sincronizar (<span id="syncCount">0</span>)</span>
+                        </button>
+                        <button onclick="toggleModal('modalCadastro')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span>Novo Funcionário</span>
+                        </button>
+                    </div>
+
+                    <!-- Employee List -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs uppercase font-semibold tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left">Nome</th>
+                                        <th class="px-6 py-4 text-left">Cargo</th>
+                                        <th class="px-6 py-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-700" id="listaFuncionarios">
+                                    <!-- JS Content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGISTROS SECTION -->
+                <div id="registros" class="section hidden fade-in space-y-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Histórico de Pontos</h2>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-end gap-4">
+                        <div class="flex-grow">
+                            <label for="startDate" class="text-sm font-medium text-gray-700 dark:text-gray-300">Data Início</label>
+                            <input type="date" id="startDate" class="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex-grow">
+                            <label for="endDate" class="text-sm font-medium text-gray-700 dark:text-gray-300">Data Fim</label>
+                            <input type="date" id="endDate" class="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex space-x-2">
+                           <button onclick="loadRegistros()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <span>Filtrar</span>
+                             </button>
+                             <button onclick="clearFilter()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-5 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>Limpar</span>
+                             </button>
+                    </div>
+                    <div class="flex space-x-2 border-l pl-4 border-gray-200">
+                        <button onclick="exportCSV()" class="bg-slate-600 hover:bg-slate-700 text-white p-2 rounded-lg transition-all duration-200 shadow-sm" title="Exportar CSV">
+                            <span class="font-bold text-sm px-1">CSV</span>
+                        </button>
+                        <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-all duration-200 shadow-sm" title="Exportar Excel">
+                            <span class="font-bold text-sm px-1">XLS</span>
+                        </button>
+                        <button onclick="exportPDF()" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 shadow-sm" title="Exportar PDF">
+                            <span class="font-bold text-sm px-1">PDF</span>
+                        </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Registros List -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs uppercase font-semibold tracking-wider">
+                                     <tr>
+                                        <th class="px-6 py-4 text-left">ID</th>
+                                        <th class="px-6 py-4 text-left">Funcionário</th>
+                                        <th class="px-6 py-4 text-left">Horário</th>
+                                        <th class="px-6 py-4 text-left">Observação</th>
+                                        <th class="px-6 py-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-700" id="listaRegistros">
+                                    <!-- JS Content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="flex items-center justify-between mt-4 px-2">
+                        <span class="text-sm text-gray-700 dark:text-gray-300" id="paginationInfo">
+                            Mostrando <span class="font-medium" id="pageStart">0</span> a <span class="font-medium" id="pageEnd">0</span> de <span class="font-medium" id="totalRecords">0</span> resultados
+                        </span>
+                        <div class="inline-flex rounded-md shadow-sm isolate space-x-2">
+                            <button onclick="changePage(currentPage - 1)" id="prevPageBtn" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                            <button onclick="changePage(currentPage + 1)" id="nextPageBtn" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Próximo</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CONFIGURACOES SECTION  -->
+                <div id="configuracoes" class="section hidden fade-in space-y-8">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações</h2>
+
+                    <!-- Dark Mode Toggle -->
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Aparência</h3>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700 dark:text-gray-300">Modo Escuro</span>
+                            <button id="darkModeToggle" onclick="toggleDarkMode()" class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <span class="sr-only">Ativar modo escuro</span>
+                                <span id="darkModeKnob" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mt-8">Configurações Gerais</h2>
+                    <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-2xl">
+                        <form id="formGeneralSettings" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horário Limite para Atraso</label>
+                                <input type="time" id="lateLimitInput" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registros após este horário serão considerados atraso no gráfico de pontualidade.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jornada de Trabalho Diária (horas)</label>
+                                <input type="number" id="workdayHoursInput" step="0.1" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Usado para calcular o banco de horas. Ex: 8 para 8 horas, 7.5 para 7h30min.</p>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-600/20 transition-all">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mt-8">Configurações de Segurança</h2>
+            
+                    <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-2xl">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Alterar Senha de Administrador</h3>
+                        <form id="formChangePassword" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha Atual</label>
+                                <input type="password" id="oldPassword" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
+                                <input type="password" id="newPassword" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" required>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-lg shadow-orange-600/20 transition-all">Alterar Senha</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-2xl">
+                        <form id="formSmtp" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Servidor SMTP</label>
+                                <input type="text" id="smtpServer" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Porta SMTP</label>
+                                <input type="number" id="smtpPort" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail SMTP</label>
+                                <input type="email" id="smtpEmail" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha SMTP</label>
+                                <input type="password" id="smtpPassword" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-600/20 transition-all">Salvar Configuração SMTP</button>
+                            </div>
+                        </form>
+                    </div>
+                
+                <!-- MANUAL SECTION -->
+                <div id="manual" class="section hidden fade-in space-y-8">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Manual do Sistema</h2>
+                    
+                    <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-8">
+                        
+                        <!-- Intro -->
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-600 mb-2">Bem-vindo ao Ponto Digital</h3>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Este sistema foi desenvolvido para facilitar o controle de jornada de trabalho através de reconhecimento facial.
+                                Abaixo você encontra um guia rápido de cada funcionalidade.
+                            </p>
+                        </div>
+
+                        <!-- Dashboard -->
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Dashboard (Visão Geral)</h4>
+                            <p class="text-gray-600 dark:text-gray-300 mt-1">
+                                Acompanhe em tempo real:
+                                <ul class="list-disc ml-5 mt-2 space-y-1">
+                                    <li>Total de funcionários cadastrados.</li>
+                                    <li>Quantidade de registros realizados no dia.</li>
+                                    <li>Gráficos de frequência semanal e pontualidade.</li>
+                                    <li>Lista de funcionários ausentes com opção de enviar lembrete por e-mail.</li>
+                                </ul>
+                            </p>
+                        </div>
+
+                        <!-- Funcionários -->
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Gerenciar Funcionários</h4>
+                            <p class="text-gray-600 dark:text-gray-300 mt-1">
+                                Nesta tela você pode:
+                                <ul class="list-disc ml-5 mt-2 space-y-1">
+                                    <li><strong>Cadastrar:</strong> Adicione novos colaboradores com foto para o reconhecimento facial.</li>
+                                    <li><strong>Editar/Excluir:</strong> Atualize dados ou remova funcionários.</li>
+                                    <li><strong>Perfil:</strong> Clique no nome para ver o histórico individual e o relatório de banco de horas.</li>
+                                    <li><strong>Relatórios:</strong> Gere relatórios de ponto individuais.</li>
+                                </ul>
+                            </p>
+                        </div>
+
+                        <!-- Registros -->
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Histórico de Pontos</h4>
+                            <p class="text-gray-600 dark:text-gray-300 mt-1">
+                                Controle total dos registros:
+                                <ul class="list-disc ml-5 mt-2 space-y-1">
+                                    <li><strong>Filtros:</strong> Busque por data específica.</li>
+                                    <li><strong>Edição:</strong> Corrija horários ou adicione observações em caso de erros.</li>
+                                    <li><strong>Exportação:</strong> Baixe os dados em CSV, Excel ou PDF para contabilidade.</li>
+                                </ul>
+                            </p>
+                        </div>
+
+                        <!-- Configurações -->
+                        <div class="border-l-4 border-orange-500 pl-4">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Configurações</h4>
+                            <p class="text-gray-600 dark:text-gray-300 mt-1">
+                                Personalize o sistema:
+                                <ul class="list-disc ml-5 mt-2 space-y-1">
+                                    <li><strong>Aparência:</strong> Ative o Modo Escuro.</li>
+                                    <li><strong>Regras:</strong> Defina o horário limite para considerar atrasos.</li>
+                                    <li><strong>Jornada:</strong> Defina a jornada de trabalho para o cálculo do banco de horas.</li>
+                                    <li><strong>Segurança:</strong> Altere a senha de administrador.</li>
+                                    <li><strong>E-mail:</strong> Configure o servidor SMTP para envio de lembretes.</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL CADASTRO FUNCIONÁRIO -->
+                <div id="modalCadastro" class="fixed inset-0 z-50 hidden">
+                    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="toggleModal('modalCadastro')"></div>
+                    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto slide-in max-h-[90vh] overflow-y-auto">
+                            <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800">
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Novo Funcionário</h3>
+                                <button onclick="toggleModal('modalCadastro')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                            <form id="formFuncionario" class="p-6 space-y-6">
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Completo</label>
+                                        <input type="text" id="nomeFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
+                                        <input type="text" id="cargoFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail</label>
+                                        <input type="email" id="emailFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Foto para Reconhecimento</label>
+                                        <div class="relative bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 transition-colors group h-64 flex flex-col items-center justify-center">
+                                            <video id="adminWebcam" class="absolute inset-0 w-full h-full object-cover hidden" autoplay playsinline></video>
+                                            <img id="previewImg" class="absolute inset-0 w-full h-full object-cover hidden">
+                                            <div id="cameraPlaceholder" class="text-center p-4">
+                                                <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Tire uma foto ou faça upload</p>
+                                                <div class="mt-4 flex justify-center space-x-3">
+                                                    <button type="button" onclick="startCamera()" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">Abrir Câmera</button>
+                                                    <label class="px-3 py-1.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-white text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 cursor-pointer transition-colors">
+                                                        Upload
+                                                        <input type="file" id="fileInput" accept="image/*" class="hidden">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="captureBtn" onclick="capturePhoto()" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow-lg hidden flex items-center space-x-2 z-10">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                                                <span>Capturar</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <button type="button" onclick="toggleModal('modalCadastro')" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancelar</button>
+                                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-600/20 transition-all transform hover:-translate-y-0.5">Salvar Funcionário</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO FUNCIONÁRIO -->
+    <div id="modalEdicaoFuncionario" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="toggleModal('modalEdicaoFuncionario')"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto slide-in">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Editar Funcionário</h3>
+                    <button onclick="toggleModal('modalEdicaoFuncionario')" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="formEdicaoFuncionario" class="p-6 space-y-6">
+                    <input type="hidden" id="editFuncId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                        <input type="text" id="editNomeFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                        <input type="text" id="editCargoFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                        <input type="email" id="editEmailFunc" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                        <button type="button" onclick="toggleModal('modalEdicaoFuncionario')" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO REGISTRO -->
+    <div id="modalEdicaoRegistro" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="toggleModal('modalEdicaoRegistro')"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto slide-in">
+                <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Ajustar Ponto</h3>
+                    <button onclick="toggleModal('modalEdicaoRegistro')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+                <form id="formEdicaoRegistro" class="p-6 space-y-6">
+                    <input type="hidden" id="editRegistroId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horário do Registro</label>
+                        <input type="datetime-local" id="editTimestamp" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observação</label>
+                        <textarea id="editObservacao" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Ex: Ajuste manual por esquecimento."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <button type="button" onclick="toggleModal('modalEdicaoRegistro')" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Salvar Horário</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RELATÓRIO MENSAL -->
+    <div id="modalRelatorio" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="toggleModal('modalRelatorio')"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto slide-in">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 id="reportModalTitle" class="text-xl font-bold text-gray-800">Relatório Mensal</h3>
+                    <button onclick="toggleModal('modalRelatorio')" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="formRelatorio" class="p-6 space-y-6">
+                    <input type="hidden" id="reportEmployeeName">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Selecione o Mês e Ano</label>
+                        <input type="month" id="reportMonth" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                        <button type="button" onclick="toggleModal('modalRelatorio')" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Gerar PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+        let capturedImageBase64 = null;
+        let dashboardChart = null;
+        let punctualityChart = null;
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let totalPages = 1;
+
+        // --- AUTH CHECK ---
+        // Roda antes de tudo. Se não estiver logado, redireciona.
+        if (!sessionStorage.getItem('adminLoggedIn')) {
+            // Adiciona um parâmetro para que a tela de login saiba para onde voltar
+            window.location.href = `login.html?redirect=admin`;
+        }
+
+        // --- Dark Mode Logic ---
+        function initDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true' || (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                updateDarkModeToggle(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateDarkModeToggle(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', isDark);
+            updateDarkModeToggle(isDark);
+        }
+
+        function updateDarkModeToggle(isDark) {
+            const btn = document.getElementById('darkModeToggle');
+            const knob = document.getElementById('darkModeKnob');
+            if(btn) btn.className = `relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isDark ? 'bg-blue-600' : 'bg-gray-200'}`;
+            if(knob) knob.className = `inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`;
+        }
+
+        // --- UI Functions ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('hidden');
+            if(modal.classList.contains('hidden')) {
+                // Reset form state when closing
+                stopCamera();
+            }
+        }
+
+        function setActiveNav(id) {
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-600/20');
+                el.classList.add('text-gray-500', 'dark:text-slate-300', 'hover:bg-blue-50', 'dark:hover:bg-slate-800', 'hover:text-blue-600', 'dark:hover:text-white');
+            });
+            const active = document.getElementById('nav-' + id);
+            if(active) {
+                active.classList.remove('text-gray-500', 'dark:text-slate-300', 'hover:bg-blue-50', 'dark:hover:bg-slate-800', 'hover:text-blue-600', 'dark:hover:text-white');
+                active.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-600/20');
+            }
+
+            // Se for uma sub-página como perfil, mantém o menu pai ativo
+            if (id === 'perfilFuncionario') {
+                const parentNav = document.getElementById('nav-funcionarios');
+                if (parentNav) {
+                    parentNav.classList.remove('text-gray-500', 'dark:text-slate-300', 'hover:bg-blue-50', 'dark:hover:bg-slate-800', 'hover:text-blue-600', 'dark:hover:text-white');
+                    parentNav.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-600/20');
+                }
+            }
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            setActiveNav(id);
+            
+            // Close sidebar on mobile when clicking a link
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+
+            if(id === 'dashboard') loadDashboard();
+            if(id === 'funcionarios') loadFuncionarios();
+            if(id === 'registros') loadRegistros(1);
+            if(id === 'configuracoes') {
+                loadSmtpConfig();
+                loadGeneralSettings();
+            }
+        }
+
+        // --- Date Display ---
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('pt-BR', dateOptions);
+
+        initDarkMode();
+        // Inicia na dashboard
+        showSection('dashboard');
+
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            window.location.href = 'login.html';
+        }
+
+        // --- Dashboard Logic ---
+        async function loadDashboard() {
+            const offlineBanner = document.getElementById('offlineBanner');
+            try {
+                const res = await fetch(`${API_URL}/dashboard`);
+                // Se a requisição funcionar, estamos online
+                offlineBanner.classList.add('hidden');
+                const data = await res.json();
+                document.getElementById('totalFuncionarios').innerText = data.total_funcionarios;
+                document.getElementById('registrosHoje').innerText = data.registros_hoje;
+                
+                // Alerts Logic
+                const alertsSection = document.getElementById('alertsSection');
+                const listaAusentes = document.getElementById('listaAusentes');
+                
+                if (data.funcionarios_ausentes && data.funcionarios_ausentes.length > 0) {
+                    alertsSection.classList.remove('hidden');
+                    listaAusentes.innerHTML = data.funcionarios_ausentes.map(f => `
+                        <li class="flex items-center justify-between py-1">
+                            <span>${f.nome}</span>
+                            ${f.email ? 
+                                `<button onclick="sendReminder('${f.nome}', '${f.email}')" class="text-xs bg-yellow-200 hover:bg-yellow-300 text-yellow-800 px-2 py-1 rounded transition-colors flex items-center space-x-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    <span>Enviar Lembrete</span>
+                                </button>` : 
+                                '<span class="text-xs text-gray-400 italic">Sem e-mail</span>'}
+                        </li>
+                    `).join('');
+                } else {
+                    alertsSection.classList.add('hidden');
+                }
+                
+                // Incomplete Records Logic
+                const alertsIncompleteSection = document.getElementById('alertsIncompleteSection');
+                const listaIncompletos = document.getElementById('listaIncompletos');
+
+                if (data.registros_incompletos && data.registros_incompletos.length > 0) {
+                    alertsIncompleteSection.classList.remove('hidden');
+                    listaIncompletos.innerHTML = data.registros_incompletos.map(r => {
+                        const dateObj = new Date(r.data + 'T00:00:00');
+                        const dateStr = dateObj.toLocaleDateString('pt-BR');
+                        return `<li class="flex items-center justify-between py-1"><span>${dateStr} - ${r.nome}</span><button onclick="showSection('registros'); document.getElementById('startDate').value='${r.data}'; document.getElementById('endDate').value='${r.data}'; loadRegistros();" class="text-xs text-blue-600 hover:underline ml-2">Ver</button></li>`;
+                    }).join('');
+                } else {
+                    alertsIncompleteSection.classList.add('hidden');
+                }
+                
+                // Render Chart
+                if (data.chart_labels && data.chart_values) {
+                    renderChart(data.chart_labels, data.chart_values);
+                }
+
+                if (data.pie_chart) {
+                    renderPieChart(data.pie_chart.labels, data.pie_chart.values);
+                }
+                
+                const tbody = document.getElementById('listaRegistrosRecentes');
+                if(data.ultimos_registros.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Nenhum registro recente.</td></tr>';
+                } else {
+                    tbody.innerHTML = data.ultimos_registros.map(reg => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${reg[0]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${reg[1]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Registrado</span>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                console.warn("Modo Offline: Dashboard", e);
+                // Se falhar, mostra o banner de modo offline
+                offlineBanner.classList.remove('hidden');
+                // Dados fictícios para visualização
+                document.getElementById('totalFuncionarios').innerText = "12";
+                document.getElementById('registrosHoje').innerText = "5";
+                document.getElementById('listaRegistrosRecentes').innerHTML = `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">João Silva (Demo)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">08:00:00</td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Registrado</span></td>
+                    </tr>
+                `;
+            }
+        }
+
+        async function sendReminder(nome, email) {
+            if(!confirm(`Enviar lembrete de ponto para ${nome}?`)) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/admin/send-reminder`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome, email })
+                });
+                const data = await res.json();
+                alert(data.message);
+            } catch (e) {
+                alert("Erro ao enviar lembrete.");
+            }
+        }
+
+        function renderChart(labels, values) {
+            const ctx = document.getElementById('weeklyChart');
+            if(!ctx) return;
+            
+            if (dashboardChart) {
+                dashboardChart.destroy();
+            }
+
+            dashboardChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Registros',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)', // blue-500 com opacidade
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barThickness: 'flex',
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 },
+                            grid: { borderDash: [2, 4], color: '#f3f4f6' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderPieChart(labels, values) {
+            const ctx = document.getElementById('punctualityChart');
+            if(!ctx) return;
+
+            if (punctualityChart) {
+                punctualityChart.destroy();
+            }
+
+            punctualityChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], // Green, Amber, Red
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#fff' : '#666' } } }
+                }
+            });
+        }
+
+        function downloadChart() {
+            if (!dashboardChart) {
+                alert("O gráfico ainda não foi carregado.");
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = dashboardChart.toBase64Image();
+            link.download = 'frequencia_semanal.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Offline / Sync Logic ---
+        function getOfflineEmployees() {
+            return JSON.parse(localStorage.getItem('offlineEmployees') || '[]');
+        }
+
+        function saveOfflineEmployee(data) {
+            const list = getOfflineEmployees();
+            list.push(data);
+            localStorage.setItem('offlineEmployees', JSON.stringify(list));
+            updateSyncUI();
+        }
+
+        function removeOfflineEmployee(tempId) {
+            let list = getOfflineEmployees();
+            list = list.filter(e => e.id !== tempId);
+            localStorage.setItem('offlineEmployees', JSON.stringify(list));
+            updateSyncUI();
+        }
+
+        function updateSyncUI() {
+            const list = getOfflineEmployees();
+            const btn = document.getElementById('btnSync');
+            const countSpan = document.getElementById('syncCount');
+            if(btn && countSpan) {
+                if(list.length > 0) {
+                    btn.classList.remove('hidden');
+                    countSpan.innerText = list.length;
+                } else {
+                    btn.classList.add('hidden');
+                }
+            }
+        }
+
+        async function syncOfflineData() {
+            const list = getOfflineEmployees();
+            if (list.length === 0) return;
+
+            const btn = document.getElementById('btnSync');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Sincronizando...';
+            btn.disabled = true;
+
+            let syncedCount = 0;
+            for (const emp of list) {
+                try {
+                    const res = await fetch(`${API_URL}/funcionarios`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            nome: emp.nome,
+                            cargo: emp.cargo,
+                            email: emp.email,
+                            image: emp.image
+                        })
+                    });
+                    
+                    if (res.ok) {
+                        removeOfflineEmployee(emp.id);
+                        syncedCount++;
+                    }
+                } catch (e) {
+                    console.error("Erro ao sincronizar", emp.nome);
+                }
+            }
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
+            if (syncedCount > 0) {
+                alert(`${syncedCount} funcionário(s) sincronizado(s) com sucesso!`);
+                loadFuncionarios();
+                loadDashboard();
+            } else {
+                alert("Não foi possível sincronizar. Verifique sua conexão.");
+            }
+        }
+
+        // --- Funcionarios Logic ---
+        async function loadFuncionarios() {
+            const offlineData = getOfflineEmployees();
+            updateSyncUI();
+            
+            try {
+                const res = await fetch(`${API_URL}/funcionarios`);
+                const data = await res.json();
+                const tbody = document.getElementById('listaFuncionarios');
+                
+                let html = '';
+
+                // Render Offline Data
+                if (offlineData.length > 0) {
+                    html += offlineData.map(func => `
+                        <tr class="hover:bg-yellow-50 transition-colors group border-l-4 border-yellow-400">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">
+                                        ${func.nome.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${func.nome}</div>
+                                        <div class="text-xs text-yellow-600">Sincronização Pendente</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${func.cargo || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="excluirFuncionario('${func.id}')" class="inline-flex items-center text-red-500 hover:text-red-700 transition-colors" title="Cancelar Cadastro">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                if(data.length === 0 && offlineData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Nenhum funcionário cadastrado.</td></tr>';
+                } else {
+                    html += data.map(func => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                            <td class="px-6 py-4 whitespace-nowrap dark:text-white">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                                        ${func.nome.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="ml-4">
+                                        <a href="#" onclick="event.preventDefault(); showProfile(${func.id})" class="text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline">
+                                            ${func.nome}
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${func.cargo || '<span class="italic text-gray-400">Não informado</span>'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="openEditFuncionarioModal(${func.id}, '${func.nome}', '${func.cargo || ''}', '${func.email || ''}')" class="inline-flex items-center text-blue-500 hover:text-blue-700 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg>
+                                </button>
+                                <button onclick="excluirFuncionario(${func.id})" class="inline-flex items-center text-red-500 hover:text-red-700 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                <button onclick="openReportModal('${func.nome}')" class="inline-flex items-center text-gray-500 hover:text-gray-700 transition-colors" title="Gerar Relatório Mensal">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6M9 11l.01-.01M12 11l.01-.01M15 11l.01-.01M4 7h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    tbody.innerHTML = html;
+                }
+            } catch (e) {
+                console.warn("Modo Offline: Funcionarios", e);
+                // Dados fictícios para visualização
+                const tbody = document.getElementById('listaFuncionarios');
+                let html = `
+                    <tr class="hover:bg-gray-50 transition-colors group">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">J</div>
+                                <div class="ml-4"><div class="text-sm font-medium text-gray-900">João Silva (Demo)</div></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Desenvolvedor</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button class="inline-flex items-center text-red-500 hover:text-red-700" title="Excluir"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </td>
+                    </tr>`;
+                
+                // Prepend offline data if any
+                if (offlineData.length > 0) {
+                    const offlineHtml = offlineData.map(func => `
+                        <tr class="hover:bg-yellow-50 transition-colors group border-l-4 border-yellow-400">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">
+                                        ${func.nome.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${func.nome}</div>
+                                        <div class="text-xs text-yellow-600">Sincronização Pendente</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${func.cargo || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <button onclick="excluirFuncionario('${func.id}')" class="inline-flex items-center text-red-500 hover:text-red-700 transition-colors" title="Cancelar Cadastro">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    html = offlineHtml + html;
+                }
+                tbody.innerHTML = html;
+            }
+        }
+
+        async function excluirFuncionario(id) {
+            if (String(id).startsWith('temp_')) {
+                if(!confirm("Remover este cadastro pendente?")) return;
+                removeOfflineEmployee(id);
+                loadFuncionarios();
+                return;
+            }
+            if(!confirm("Tem certeza que deseja excluir este funcionário? Todos os seus registros de ponto também serão removidos.")) return;
+            try {
+                await fetch(`${API_URL}/funcionarios/${id}`, { method: 'DELETE' });
+                loadFuncionarios();
+                // Update dashboard stats if visible
+                loadDashboard();
+            } catch (e) {
+                alert("Erro ao excluir.");
+            }
+        }
+
+        document.getElementById('formEdicaoFuncionario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editFuncId').value;
+            const nome = document.getElementById('editNomeFunc').value;
+            const cargo = document.getElementById('editCargoFunc').value;
+            const email = document.getElementById('editEmailFunc').value;
+
+            try {
+                const res = await fetch(`${API_URL}/funcionarios/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome, cargo, email })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    toggleModal('modalEdicaoFuncionario');
+                    loadFuncionarios();
+                    loadDashboard(); // Nomes podem ter mudado nos últimos registros
+                } else {
+                    alert('Erro: ' + result.message);
+                }
+            } catch (error) {
+                alert('Erro de conexão ao salvar o funcionário.');
+            }
+        });
+
+        function openEditFuncionarioModal(id, nome, cargo, email) {
+            document.getElementById('editFuncId').value = id;
+            document.getElementById('editNomeFunc').value = nome;
+            document.getElementById('editCargoFunc').value = cargo;
+            document.getElementById('editEmailFunc').value = email;
+            toggleModal('modalEdicaoFuncionario');
+        }
+
+        function openReportModal(nome) {
+            document.getElementById('reportEmployeeName').value = nome;
+            document.getElementById('reportModalTitle').innerText = `Relatório Mensal de ${nome}`;
+            // Define o mês atual como padrão no input
+            document.getElementById('reportMonth').value = new Date().toISOString().slice(0, 7);
+            toggleModal('modalRelatorio');
+        }
+
+        async function showProfile(id) {
+            showSection('perfilFuncionario');
+            const profileSection = document.getElementById('perfilFuncionario');
+            profileSection.innerHTML = '<p class="text-center text-gray-500">Carregando perfil...</p>';
+
+            try {
+                const res = await fetch(`${API_URL}/funcionarios/${id}/profile`);
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message);
+
+                const { funcionario, registros } = data;
+                const fotoUrl = `known_faces/${funcionario.nome.replace(/ /g, '_').toLowerCase()}.jpg?t=${new Date().getTime()}`;
+
+                let registrosHtml = '';
+                if (registros.length > 0) {
+                    registrosHtml = registros.map(reg => `
+                        <li class="flex justify-between items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <span class="text-gray-700 dark:text-gray-300">${reg.timestamp}</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate" title="${reg.observacao || ''}">${reg.observacao || ''}</span>
+                        </li>
+                    `).join('');
+                } else {
+                    registrosHtml = '<li class="p-3 text-center text-gray-500">Nenhum registro de ponto encontrado.</li>';
+                }
+
+                profileSection.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Perfil do Funcionário</h2>
+                        <button onclick="showSection('funcionarios')" class="text-sm text-blue-600 hover:underline font-medium">Voltar para a lista</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1">
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+                                <img src="${fotoUrl}" alt="Foto de ${funcionario.nome}" class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-white dark:border-gray-700 shadow-lg" onerror="this.src='https://via.placeholder.com/150/e2e8f0/64748b?text=${funcionario.nome.charAt(0)}'">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white">${funcionario.nome}</h3>
+                                <p class="text-gray-500 dark:text-gray-400">${funcionario.cargo || 'Cargo não informado'}</p>
+                                <p class="text-sm text-gray-400 mt-1">${funcionario.email || 'Sem e-mail'}</p>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2">
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                                <h3 class="px-6 py-4 font-bold text-gray-800 dark:text-white border-b dark:border-gray-700">Histórico de Ponto</h3>
+                                <ul class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[30rem] overflow-y-auto">
+                                    ${registrosHtml}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BANCO DE HORAS SECTION -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mt-8">
+                        <div class="px-6 py-4 border-b dark:border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <h3 class="font-bold text-gray-800 dark:text-white">Banco de Horas</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Saldo total do mês: <span id="timeBankBalance" class="font-bold text-lg">-</span></p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="timeBankMonth" class="text-sm font-medium">Mês:</label>
+                                <input type="month" id="timeBankMonth" onchange="loadTimeBank('${funcionario.nome}')" class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left">Data</th>
+                                        <th class="px-4 py-3 text-left">Status</th>
+                                        <th class="px-4 py-3 text-left">Horas Trabalhadas</th>
+                                        <th class="px-4 py-3 text-left">Saldo do Dia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timeBankTableBody" class="divide-y divide-gray-100 dark:divide-gray-700">
+                                    <tr><td colspan="4" class="p-4 text-center text-gray-500">Selecione um mês para ver o relatório.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                // Set default month and load time bank
+                document.getElementById('timeBankMonth').value = new Date().toISOString().slice(0, 7);
+                loadTimeBank(funcionario.nome);
+
+            } catch (e) {
+                console.warn("Modo Offline: Perfil", e);
+                profileSection.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-gray-800">Perfil do Funcionário (Demo)</h2>
+                        <button onclick="showSection('funcionarios')" class="text-sm text-blue-600 hover:underline font-medium">Voltar para a lista</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1">
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+                                <div class="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-200 flex items-center justify-center text-4xl text-gray-400">?</div>
+                                <h3 class="text-xl font-bold text-gray-900">Funcionário Demo</h3>
+                                <p class="text-gray-500">Cargo Demo</p>
+                                <p class="text-sm text-gray-400 mt-1">demo@exemplo.com</p>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                                <h3 class="px-6 py-4 font-bold text-gray-800 border-b">Histórico de Ponto</h3>
+                                <ul class="divide-y divide-gray-100 max-h-[30rem] overflow-y-auto">
+                                    <li class="p-3 text-center text-gray-500">Dados indisponíveis offline.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- Registros Logic ---
+        async function loadRegistros(page = 1) {
+            currentPage = page;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            params.append('page', currentPage);
+            params.append('per_page', itemsPerPage);
+            
+            const queryString = params.toString();
+            const url = `${API_URL}/registros?${queryString}`;
+
+            try {
+                const res = await fetch(url);
+                const responseData = await res.json();
+                const data = responseData.data;
+                const total = responseData.total;
+                totalPages = responseData.total_pages;
+
+                const tbody = document.getElementById('listaRegistros');
+                
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">Nenhum registro de ponto encontrado para o filtro selecionado.</td></tr>';
+                    updatePaginationControls(0, 0, 0);
+                } else {
+                    tbody.innerHTML = data.map(reg => `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">${reg.id}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${reg.nome}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">${reg.timestamp}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 max-w-xs truncate" title="${reg.observacao || ''}">
+                                ${reg.observacao || '<span class="italic text-gray-400">N/A</span>'}
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
+                                <button onclick="openEditRegistroModal(${reg.id}, '${reg.timestamp}', \`${reg.observacao || ''}\`)" class="inline-flex items-center text-blue-500 hover:text-blue-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg>
+                                </button>
+                                <button onclick="excluirRegistro(${reg.id})" class="inline-flex items-center text-red-500 hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    
+                    // Atualiza info da paginação
+                    const start = (currentPage - 1) * itemsPerPage + 1;
+                    const end = start + data.length - 1;
+                    updatePaginationControls(start, end, total);
+                }
+            } catch (e) {
+                console.warn("Modo Offline: Registros", e);
+                // Dados fictícios para visualização offline
+                const dummyData = [
+                    { id: 1, nome: "João Silva (Demo)", timestamp: "2023-10-27 08:00:00", observacao: "Registro offline" },
+                    { id: 2, nome: "Maria Souza (Demo)", timestamp: "2023-10-27 18:00:00", observacao: "" }
+                ];
+                const tbody = document.getElementById('listaRegistros');
+                tbody.innerHTML = dummyData.map(reg => `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 text-sm text-gray-500">${reg.id}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${reg.nome}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${reg.timestamp}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="${reg.observacao || ''}">
+                            ${reg.observacao || '<span class="italic text-gray-400">N/A</span>'}
+                        </td>
+                        <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
+                            <span class="text-xs text-gray-400 italic">Indisponível offline</span>
+                        </td>
+                    </tr>
+                `).join('');
+                updatePaginationControls(1, dummyData.length, dummyData.length);
+            }
+        }
+
+        function updatePaginationControls(start, end, total) {
+            document.getElementById('pageStart').innerText = start;
+            document.getElementById('pageEnd').innerText = end;
+            document.getElementById('totalRecords').innerText = total;
+            
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(newPage) {
+            if (newPage >= 1 && newPage <= totalPages) {
+                loadRegistros(newPage);
+            }
+        }
+
+        async function excluirRegistro(id) {
+            if(!confirm("Tem certeza que deseja excluir este registro de ponto? Esta ação não pode ser desfeita.")) return;
+            try {
+                await fetch(`${API_URL}/registros/${id}`, { method: 'DELETE' });
+                loadRegistros(currentPage);
+                loadDashboard();
+            } catch (e) {
+                alert("Erro ao excluir registro.");
+            }
+        }
+
+        function openEditRegistroModal(id, timestamp, observacao) {
+            document.getElementById('editRegistroId').value = id;
+            // Formata o timestamp para o input datetime-local (YYYY-MM-DDTHH:MM)
+            const formattedTimestamp = timestamp.replace(' ', 'T').slice(0, 16);
+            document.getElementById('editTimestamp').value = formattedTimestamp;
+            document.getElementById('editObservacao').value = observacao;
+            toggleModal('modalEdicaoRegistro');
+        }
+
+        function clearFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            loadRegistros(1);
+        }
+
+    // --- Export Functions ---
+    async function fetchAllForExport() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        // Sem params de paginação = busca tudo
+
+        const res = await fetch(`${API_URL}/registros?${params.toString()}`);
+        return await res.json();
+    }
+    
+    async function exportCSV() {
+        const filteredRegistros = await fetchAllForExport();
+        if (!filteredRegistros.length) return alert("Sem dados para exportar.");
+        
+        const headers = ["ID", "Nome", "Data/Hora"];
+        // Cria linhas com aspas para evitar problemas com vírgulas nos nomes
+        const rows = filteredRegistros.map(r => [r.id, `"${r.nome}"`, `"${r.timestamp}"`]);
+        
+        const csvContent = headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+        
+        // Adiciona BOM (\uFEFF) para o Excel reconhecer acentos corretamente
+        const blob = new Blob(["\uFEFF"+csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "registros_ponto.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    async function exportExcel() {
+        const filteredRegistros = await fetchAllForExport();
+        if (!filteredRegistros.length) return alert("Sem dados para exportar.");
+        
+        const ws = XLSX.utils.json_to_sheet(filteredRegistros);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Registros");
+        XLSX.writeFile(wb, "registros_ponto.xlsx");
+    }
+
+    async function exportPDF() {
+        const filteredRegistros = await fetchAllForExport();
+        if (!filteredRegistros.length) return alert("Sem dados para exportar.");
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.text("Relatório de Ponto", 14, 10);
+        doc.autoTable({
+            head: [['ID', 'Nome', 'Data/Hora']],
+            body: filteredRegistros.map(r => [r.id, r.nome, r.timestamp]),
+            startY: 20,
+        });
+        
+        doc.save("registros_ponto.pdf");
+    }
+
+        // --- Camera & Upload Logic ---
+        const video = document.getElementById('adminWebcam');
+        const preview = document.getElementById('previewImg');
+        const captureBtn = document.getElementById('captureBtn');
+        const fileInput = document.getElementById('fileInput');
+        const placeholder = document.getElementById('cameraPlaceholder');
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                preview.classList.add('hidden');
+                captureBtn.classList.remove('hidden');
+            } catch (e) {
+                alert("Não foi possível acessar a câmera.");
+            }
+        }
+
+        function stopCamera() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+            }
+            video.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            capturedImageBase64 = null;
+        }
+
+        function capturePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            capturedImageBase64 = canvas.toDataURL('image/jpeg');
+            
+            // Stop stream
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+            }
+            
+            video.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            preview.src = capturedImageBase64;
+            preview.classList.remove('hidden');
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    capturedImageBase64 = reader.result;
+                    preview.src = capturedImageBase64;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    video.classList.add('hidden');
+                    captureBtn.classList.add('hidden');
+                    
+                    // Stop camera if running
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(t => t.stop());
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Form Submission ---
+        document.getElementById('formFuncionario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!capturedImageBase64) {
+                alert("Por favor, tire uma foto ou envie um arquivo.");
+                return;
+            }
+
+            const nome = document.getElementById('nomeFunc').value;
+            const cargo = document.getElementById('cargoFunc').value;
+            const email = document.getElementById('emailFunc').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+
+            btn.innerText = 'Salvando...';
+            btn.disabled = true;
+
+            try {
+                    const res = await fetch(`${API_URL}/funcionarios`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome, cargo, email, image: capturedImageBase64 })
+                });
+
+                const result = await res.json();
+                if (result.status === 'success') {
+                    // Reset form
+                    document.getElementById('formFuncionario').reset();
+                    stopCamera();
+                    toggleModal('modalCadastro');
+                    loadFuncionarios();
+                    loadDashboard(); // Update stats
+                    alert('Funcionário cadastrado com sucesso!');
+                } else {
+                    alert('Erro: ' + result.message);
+                }
+            } catch (error) {
+                // Save offline
+                const offlineFunc = {
+                    id: 'temp_' + Date.now(),
+                    nome, cargo, email, image: capturedImageBase64
+                };
+                saveOfflineEmployee(offlineFunc);
+                
+                document.getElementById('formFuncionario').reset();
+                stopCamera();
+                toggleModal('modalCadastro');
+                loadFuncionarios();
+                alert('Sem conexão. Funcionário salvo localmente e será sincronizado depois.');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('formEdicaoRegistro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editRegistroId').value;
+            const timestampValue = document.getElementById('editTimestamp').value;
+            const observacao = document.getElementById('editObservacao').value;
+            
+            // Converte o formato do datetime-local para o formato do banco de dados (YYYY-MM-DD HH:MM:SS)
+            const timestamp = timestampValue.replace('T', ' ') + ':00';
+
+            try {
+                const res = await fetch(`${API_URL}/registros/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ timestamp, observacao })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    toggleModal('modalEdicaoRegistro');
+                    loadRegistros(currentPage);
+                    loadDashboard();
+                } else {
+                    alert('Erro: ' + result.message);
+                }
+            } catch (error) {
+                alert('Erro de conexão ao salvar o registro.');
+            }
+        });
+
+        // --- General Settings Logic ---
+        async function loadGeneralSettings() {
+            try {
+                const res = await fetch(`${API_URL}/admin/settings`);
+                const data = await res.json();
+                if (data.late_limit) document.getElementById('lateLimitInput').value = data.late_limit;
+                if (data.workday_hours) document.getElementById('workdayHoursInput').value = data.workday_hours;
+            } catch (e) {
+                console.error("Erro ao carregar configurações gerais", e);
+            }
+        }
+
+        const formGeneralSettings = document.getElementById('formGeneralSettings');
+        if (formGeneralSettings) {
+            formGeneralSettings.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const late_limit = document.getElementById('lateLimitInput').value;
+                const workday_hours = document.getElementById('workdayHoursInput').value;
+                
+                try {
+                    const res = await fetch(`${API_URL}/admin/settings`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ late_limit, workday_hours })
+                    });
+                    const result = await res.json();
+                    alert(result.message);
+                } catch (error) {
+                    alert('Erro ao salvar configurações.');
+                }
+            });
+        }
+
+        async function loadTimeBank(employeeName) {
+            const month = document.getElementById('timeBankMonth').value;
+            const tableBody = document.getElementById('timeBankTableBody');
+            const balanceEl = document.getElementById('timeBankBalance');
+            
+            if (!month) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Selecione um mês.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Carregando...</td></tr>';
+            balanceEl.textContent = '-';
+
+            try {
+                const res = await fetch(`${API_URL}/report/time-bank?name=${encodeURIComponent(employeeName)}&month=${month}`);
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message);
+
+                balanceEl.textContent = data.total_balance_hours;
+                const isNegative = data.total_balance_hours.startsWith('-');
+                balanceEl.className = `font-bold text-lg ${isNegative ? 'text-red-500' : 'text-green-500'}`;
+
+                if (data.daily_summary.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum dado para este mês.</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = data.daily_summary.map(day => {
+                    const date = new Date(day.date + 'T00:00:00');
+                    const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', weekday: 'short' });
+                    
+                    let statusClass = '';
+                    switch(day.status) {
+                        case 'Completo': statusClass = 'bg-green-100 text-green-800'; break;
+                        case 'Incompleto': statusClass = 'bg-yellow-100 text-yellow-800'; break;
+                        case 'Fim de Semana': statusClass = 'bg-blue-100 text-blue-800'; break;
+                        default: statusClass = 'bg-gray-100 text-gray-800'; // Folga
+                    }
+
+                    let balanceClass = '';
+                    if (day.balance_hours) {
+                        if (day.balance_hours.startsWith('-')) {
+                            balanceClass = 'text-red-500';
+                        } else if (day.balance_hours !== '+00:00') {
+                            balanceClass = 'text-green-500';
+                        }
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">${formattedDate}</td>
+                            <td class="px-4 py-3 text-sm"><span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${day.status}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">${day.worked_hours === '+00:00' ? '-' : day.worked_hours}</td>
+                            <td class="px-4 py-3 text-sm font-medium ${balanceClass}">${day.balance_hours || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Erro ao carregar banco de horas: ${e.message}</td></tr>`;
+                console.error(e);
+            }
+        }
+
+        // --- Change Password Logic ---
+        const formChangePassword = document.getElementById('formChangePassword');
+        if (formChangePassword) {
+            formChangePassword.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const old_password = document.getElementById('oldPassword').value;
+                const new_password = document.getElementById('newPassword').value;
+
+                try {
+                    const res = await fetch(`${API_URL}/admin/change-password`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ old_password, new_password })
+                    });
+                    const result = await res.json();
+                    alert(result.message);
+                    if (res.ok) {
+                        formChangePassword.reset();
+                    }
+                } catch (error) {
+                    alert('Erro de conexão ao tentar alterar a senha.');
+                }
+            });
+        }
+
+        // --- SMTP Config Logic ---
+        async function loadSmtpConfig() {
+            try {
+                const res = await fetch(`${API_URL}/admin/smtp-config`);
+                const data = await res.json();
+                if (data.server) document.getElementById('smtpServer').value = data.server;
+                if (data.port) document.getElementById('smtpPort').value = data.port;
+                if (data.email) document.getElementById('smtpEmail').value = data.email;
+                if (data.password) document.getElementById('smtpPassword').value = data.password;
+            } catch (e) {
+                console.error("Erro ao carregar config SMTP", e);
+            }
+        }
+
+        document.getElementById('formSmtp').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const server = document.getElementById('smtpServer').value;
+            const port = document.getElementById('smtpPort').value;
+            const email = document.getElementById('smtpEmail').value;
+            const password = document.getElementById('smtpPassword').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/admin/smtp-config`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ server, port, email, password })
+                });
+                const result = await res.json();
+                alert(result.message || 'Configuração SMTP salva com sucesso!');
+            } catch (error) {
+                alert('Erro ao salvar configuração SMTP.');
+            }
+        });
+
+        document.getElementById('formRelatorio').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('reportEmployeeName').value;
+            const month = document.getElementById('reportMonth').value;
+            
+            if (!nome || !month) {
+                alert('Por favor, selecione um mês.');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/report/monthly?name=${encodeURIComponent(nome)}&month=${month}`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    alert(`Nenhum registro de ponto encontrado para ${nome} no mês selecionado.`);
+                    return;
+                }
+
+                // Gerar o PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const monthFormatted = new Date(month + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+                doc.setFontSize(18);
+                doc.text("Relatório de Ponto", 14, 22);
+                doc.setFontSize(12);
+                doc.text(`Funcionário: ${nome}`, 14, 30);
+                doc.text(`Mês: ${monthFormatted.charAt(0).toUpperCase() + monthFormatted.slice(1)}`, 14, 36);
+
+                doc.autoTable({
+                    head: [['Data', 'Horário', 'Status']],
+                    body: data.registros.map(r => [r.data, r.hora, r.status]),
+                    startY: 45,
+                });
+                
+                doc.text(`Total de Horas: ${data.total_horas || '-'}`, 14, doc.lastAutoTable.finalY + 10);
+                doc.save(`relatorio_${nome.replace(/ /g, '_')}_${month}.pdf`);
+                
+                toggleModal('modalRelatorio');
+            } catch (error) {
+                alert('Erro ao gerar relatório PDF.');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

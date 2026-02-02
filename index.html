@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto Digital com Reconhecimento Facial</title>
+    <!-- Incluindo Tailwind CSS via CDN para simplicidade -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            /* Fundo moderno com gradiente animado */
+            background: linear-gradient(-45deg, #0f172a, #172554, #312e81, #1e3a8a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        #splashScreen {
+            background: linear-gradient(-45deg, #4f46e5, #3b82f6, #22d3ee, #6366f1);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            transition: opacity 0.5s ease-out;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .is-hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        .is-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* Efeitos de Transição para Frases */
+        .quote-transition {
+            transition: opacity 1s ease-in-out, transform 1s ease;
+        }
+
+        /* Efeito de Scanner */
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; box-shadow: 0 0 15px #3b82f6; }
+            90% { opacity: 1; box-shadow: 0 0 15px #3b82f6; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scanner-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #60a5fa; /* blue-400 */
+            animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Animação de Pulso Customizada */
+        @keyframes pulse-glow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Spinner de Carregamento */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <!-- TELA DE BLOQUEIO / DATA E HORA -->
+    <div id="splashScreen" class="fixed inset-0 flex flex-col items-center justify-center text-white cursor-pointer z-50 transition-all duration-300 is-visible">
+        <div class="text-6xl font-bold mb-4" id="clockTime">00:00</div>
+        <div class="text-2xl" id="clockDate">Segunda, 01 de Janeiro</div>
+        <div id="motivationalQuote" class="text-xl font-light italic text-white/90 mt-12 px-6 text-center max-w-2xl quote-transition h-20 flex items-center justify-center"></div>
+        <div class="animate-pulse-glow bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-3 rounded-full font-semibold shadow-xl mt-12 hover:bg-white/20 transition-all">
+            Toque para iniciar
+        </div>
+    </div>
+
+    <!-- POPUP DE ERRO -->
+    <div id="errorPopup" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black/50 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center transform scale-100 transition-transform duration-300">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Não Reconhecido</h3>
+            <p id="errorPopupMessage" class="text-gray-600 mb-6">Não foi possível identificar seu rosto.</p>
+            <button onclick="closeErrorPopup()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-red-500/30">
+                Tentar Novamente
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL (CÂMERA) -->
+    <div id="mainApp" class="bg-white/90 backdrop-blur-xl border border-white/50 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center relative transition-all duration-300 is-hidden transform hover:scale-[1.01] duration-500">
+        <!-- Botão Voltar -->
+        <button id="backBtn" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <h1 class="text-3xl font-bold mb-2 text-gray-800 tracking-tight">Ponto Digital</h1>
+        <p id="instructionText" class="text-gray-500 mb-6 font-medium">Posicione seu rosto no centro</p>
+
+        <!-- Elemento de vídeo para mostrar a webcam -->
+        <div class="relative w-full h-72 mb-6 bg-black rounded-2xl overflow-hidden shadow-inner flex items-center justify-center group ring-4 ring-gray-100">
+            <video id="webcam" class="w-full h-full object-cover" autoplay playsinline></video>
+            
+            <!-- Scanner Line Animation -->
+            <div class="scanner-line"></div>
+            
+            <!-- Guia visual para posicionamento do rosto -->
+            <div class="absolute w-48 h-60 border-2 border-white/40 rounded-[40%] pointer-events-none"></div>
+            <!-- Tech Corners -->
+            <div class="absolute top-4 left-4 w-6 h-6 border-t-4 border-l-4 border-blue-500/70 rounded-tl-lg"></div>
+            <div class="absolute top-4 right-4 w-6 h-6 border-t-4 border-r-4 border-blue-500/70 rounded-tr-lg"></div>
+            <div class="absolute bottom-4 left-4 w-6 h-6 border-b-4 border-l-4 border-blue-500/70 rounded-bl-lg"></div>
+            <div class="absolute bottom-4 right-4 w-6 h-6 border-b-4 border-r-4 border-blue-500/70 rounded-br-lg"></div>
+
+            <div id="countdown" class="absolute text-white text-9xl font-bold" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);"></div>
+            <!-- Botão Alternar Câmera -->
+            <button id="switchCameraBtn" class="absolute bottom-4 right-4 bg-white/30 hover:bg-white/50 text-white p-2 rounded-full backdrop-blur-sm transition z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Botão para bater o ponto -->
+        <button id="clockInBtn" class="hidden w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+            Capturando...
+        </button>
+
+        <!-- Área para exibir mensagens de status -->
+        <div id="message" class="mt-4 text-lg font-medium"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const clockInBtn = document.getElementById('clockInBtn');
+        const messageDiv = document.getElementById('message');
+        const splashScreen = document.getElementById('splashScreen');
+        const mainApp = document.getElementById('mainApp');
+        const backBtn = document.getElementById('backBtn');
+        const countdownDiv = document.getElementById('countdown');
+        const instructionText = document.getElementById('instructionText');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const quoteElement = document.getElementById('motivationalQuote');
+
+        let currentFacingMode = 'user';
+        let countdownInterval;
+
+        // 1. Acessar a webcam
+        async function setupWebcam() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Erro ao acessar a webcam: ", err);
+                messageDiv.textContent = "Erro ao acessar a webcam. Por favor, permita o acesso.";
+                messageDiv.className = 'mt-4 text-lg font-medium text-red-500';
+            }
+        }
+
+        // --- LÓGICA DO RELÓGIO E SPLASH SCREEN ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clockTime').innerText = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clockDate').innerText = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- LÓGICA DA MENSAGEM MOTIVACIONAL ---
+        const quotes = [
+            "O Senhor é o meu pastor; nada me faltará. - Salmo 23:1",
+            "Tudo posso naquele que me fortalece. - Filipenses 4:13",
+            "Acredite em si mesmo e o resto virá naturalmente.",
+            "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
+            "A única maneira de fazer um ótimo trabalho é amar o que você faz.",
+            "A persistência realiza o impossível.",
+            "Seja a mudança que você deseja ver no mundo."
+        ];
+        
+        let quoteIndex = 0;
+        function cycleQuotes() {
+            quoteElement.style.opacity = '0';
+            quoteElement.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                quoteElement.innerText = `"${quotes[quoteIndex]}"`;
+                quoteIndex = (quoteIndex + 1) % quotes.length;
+                quoteElement.style.opacity = '1';
+                quoteElement.style.transform = 'translateY(0)';
+            }, 1000);
+        }
+        
+        // Inicia o ciclo de frases
+        cycleQuotes();
+        setInterval(cycleQuotes, 6000);
+
+        splashScreen.addEventListener('click', () => {
+            playClickSound();
+            splashScreen.classList.replace('is-visible', 'is-hidden');
+            mainApp.classList.replace('is-hidden', 'is-visible');
+            setupWebcam().then(() => {
+                // Só inicia o countdown depois que a câmera estiver pronta
+                initiateCountdown();
+            });
+        });
+
+        backBtn.addEventListener('click', () => {
+            mainApp.classList.replace('is-visible', 'is-hidden');
+            splashScreen.classList.replace('is-hidden', 'is-visible');
+            resetState();
+            // Parar a câmera para economizar recursos
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        switchCameraBtn.addEventListener('click', () => {
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownDiv.textContent = "";
+            instructionText.textContent = "Ajustando câmera...";
+            
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            
+            setupWebcam().then(() => {
+                initiateCountdown();
+            });
+        });
+
+        function playClickSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        }
+
+        function playSuccessSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+
+            // Função auxiliar para criar notas com envelope suave
+            const playNote = (freq, startTime) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, startTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                // Envelope (Fade in/out) para evitar cliques e soar suave
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.1, startTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+                
+                osc.start(startTime);
+                osc.stop(startTime + 0.5);
+            };
+
+            // Acorde de Sucesso (C Maior: Dó, Mi, Sol) em sequência rápida
+            playNote(523.25, now);       // C5
+            playNote(659.25, now + 0.1); // E5
+            playNote(783.99, now + 0.2); // G5
+        }
+
+        function playErrorSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            // Som "Sawtooth" (mais áspero) e descendente para indicar erro
+            osc.type = 'sawtooth'; 
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.4);
+
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start();
+            osc.stop(ctx.currentTime + 0.4);
+        }
+
+        function showErrorPopup(msg) {
+            document.getElementById('errorPopupMessage').textContent = msg;
+            document.getElementById('errorPopup').classList.remove('hidden');
+        }
+
+        function closeErrorPopup() {
+            document.getElementById('errorPopup').classList.add('hidden');
+            resetState();
+            initiateCountdown(); // Reinicia o processo automaticamente ao fechar
+        }
+
+        function resetState() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            messageDiv.textContent = "";
+            countdownDiv.textContent = "";
+            instructionText.textContent = "Posicione seu rosto no centro. A captura será automática.";
+            clockInBtn.classList.add('hidden');
+            messageDiv.classList.remove('hidden');
+        }
+
+        function initiateCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            let count = 3;
+            countdownDiv.textContent = count;
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownDiv.textContent = count;
+                } else {
+                    countdownDiv.textContent = "";
+                    instructionText.textContent = "Sorrria!";
+                    clearInterval(countdownInterval);
+                    startAutomaticCapture();
+                }
+            }, 1000);
+        }
+
+        // 2. Lógica de captura automática
+        async function startAutomaticCapture() {
+            messageDiv.classList.add('hidden');
+            clockInBtn.classList.remove('hidden');
+            clockInBtn.innerHTML = '<div class="spinner"></div> Capturando...';
+
+            const images = [];
+            // Captura 3 fotos em sequência para melhorar precisão
+            for (let i = 0; i < 3; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                images.push(canvas.toDataURL('image/jpeg'));
+                
+                // Pequeno atraso entre as fotos (300ms)
+                if (i < 2) await new Promise(r => setTimeout(r, 300));
+            }
+
+            clockInBtn.innerHTML = '<div class="spinner"></div> Processando...';
+
+            // 3. Enviar as imagens para o backend
+            try {
+                const response = await fetch('http://127.0.0.1:5000/clock_in', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ images: images }),
+                });
+
+                const result = await response.json();
+                
+                clockInBtn.classList.add('hidden');
+                messageDiv.classList.remove('hidden');
+
+                // 4. Exibir o resultado
+                if (result.status === 'success') {
+                    const currentHour = new Date().getHours();
+                    let greeting = '';
+                    if (currentHour < 12) {
+                        greeting = 'Bom dia';
+                    } else if (currentHour < 18) {
+                        greeting = 'Boa tarde';
+                    } else {
+                        greeting = 'Boa noite';
+                    }
+
+                    messageDiv.textContent = `${greeting}! ${result.message} Ótimo trabalho!`;
+                    messageDiv.className = 'mt-4 text-lg font-medium text-green-500';
+                    playSuccessSound();
+
+                    // Efeito de Confetes
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+
+                    // Voltar para a tela inicial após 3 segundos
+                    setTimeout(() => {
+                        backBtn.click();
+                    }, 3000);
+                } else {
+                    clockInBtn.classList.add('hidden');
+                    messageDiv.classList.remove('hidden');
+                    playErrorSound();
+                    showErrorPopup(result.message || "Rosto não identificado. Tente novamente.");
+                }
+
+            } catch (error) {
+                clockInBtn.classList.add('hidden');
+                messageDiv.classList.remove('hidden');
+                console.error('Erro na comunicação com o servidor:', error);
+                playErrorSound();
+                showErrorPopup("Erro de conexão com o servidor.");
+            }
+        }
+
+    </script>
+
+</body>
+</html>

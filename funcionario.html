@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Funcionário</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+
+    <div id="employeeContent" class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Meus Registros</h1>
+                    <p id="welcomeMsg" class="text-gray-600"></p>
+                </div>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                    Sair
+                </button>
+            </div>
+
+            <!-- TABS -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button onclick="switchEmployeeTab('historico')" id="tab-historico" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600">
+                        Histórico Simples
+                    </button>
+                    <button onclick="switchEmployeeTab('bancoHoras')" id="tab-bancoHoras" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Banco de Horas
+                    </button>
+                </nav>
+            </div>
+    
+            <div id="historicoArea" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Histórico de Ponto</h2>
+                <div class="border rounded-md overflow-hidden">
+                    <ul id="listaHistorico" class="divide-y divide-gray-200">
+                        <!-- Lista preenchida via JS -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- BANCO DE HORAS AREA -->
+            <div id="bancoHorasArea" class="tab-content hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                     <div>
+                        <h2 class="text-lg font-semibold text-gray-700">Relatório de Banco de Horas</h2>
+                        <p class="text-sm text-gray-500">Saldo total do mês: <span id="employeeTimeBankBalance" class="font-bold text-lg">-</span></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="employeeTimeBankMonth" class="text-sm font-medium">Mês:</label>
+                        <input type="month" id="employeeTimeBankMonth" onchange="loadEmployeeTimeBank()" class="px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div class="border rounded-md overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Data</th>
+                                <th class="px-4 py-3 text-left">Status</th>
+                                <th class="px-4 py-3 text-left">Horas Trabalhadas</th>
+                                <th class="px-4 py-3 text-left">Saldo do Dia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTimeBankTableBody" class="divide-y divide-gray-200">
+                            <!-- JS Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-4">Caso encontre alguma inconsistência, utilize a opção "Relatar Problema" em um registro específico.</p>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+        const historicoArea = document.getElementById('historicoArea');
+        const bancoHorasArea = document.getElementById('bancoHorasArea');
+        const lista = document.getElementById('listaHistorico');
+        const welcomeMsg = document.getElementById('welcomeMsg');
+
+        function logout() {
+            sessionStorage.removeItem('employeeName');
+            window.location.href = 'login.html';
+        }
+
+        function switchEmployeeTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId + 'Area').classList.remove('hidden');
+
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+            
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.add('border-blue-500', 'text-blue-600');
+            activeBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+            if (tabId === 'bancoHoras' && !document.getElementById('employeeTimeBankMonth').value) {
+                document.getElementById('employeeTimeBankMonth').value = new Date().toISOString().slice(0, 7);
+                loadEmployeeTimeBank();
+            }
+        }
+
+        async function loadHistory() {
+            const nome = sessionStorage.getItem('employeeName');
+
+            // Auth Check
+            if (!nome) {
+                window.location.href = 'login.html?redirect=employee';
+                return;
+            }
+
+            welcomeMsg.innerText = `Bem-vindo(a), ${nome}.`;
+            
+            try {
+                const res = await fetch(`${API_URL}/registros/${nome}`);
+                const registros = await res.json();
+
+                lista.innerHTML = '';
+                if (registros.length === 0) {
+                    lista.innerHTML = '<li class="p-4 text-center text-gray-500">Nenhum registro encontrado.</li>';
+                } else {
+                    registros.forEach(reg => {
+                        lista.innerHTML += `
+                            <li class="p-4 hover:bg-gray-50 flex justify-between items-center">
+                                <span>${reg}</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">Concordo</button>
+                                    <button class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200">Relatar Problema</button>
+                                </div>
+                            </li>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                lista.innerHTML = '<li class="p-4 text-center text-red-500">Erro ao carregar histórico. Tente novamente mais tarde.</li>';
+            }
+        }
+
+        async function loadEmployeeTimeBank() {
+            const employeeName = sessionStorage.getItem('employeeName');
+            const month = document.getElementById('employeeTimeBankMonth').value;
+            const tableBody = document.getElementById('employeeTimeBankTableBody');
+            const balanceEl = document.getElementById('employeeTimeBankBalance');
+            
+            if (!month) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Selecione um mês.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Carregando...</td></tr>';
+            balanceEl.textContent = '-';
+
+            try {
+                const res = await fetch(`${API_URL}/report/time-bank?name=${encodeURIComponent(employeeName)}&month=${month}`);
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message);
+
+                balanceEl.textContent = data.total_balance_hours;
+                const isNegative = data.total_balance_hours.startsWith('-');
+                balanceEl.className = `font-bold text-lg ${isNegative ? 'text-red-500' : 'text-green-500'}`;
+
+                if (data.daily_summary.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum dado para este mês.</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = data.daily_summary.map(day => {
+                    const date = new Date(day.date + 'T00:00:00');
+                    const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', weekday: 'short' });
+                    
+                    let statusClass = '';
+                    switch(day.status) {
+                        case 'Completo': statusClass = 'bg-green-100 text-green-800'; break;
+                        case 'Incompleto': statusClass = 'bg-yellow-100 text-yellow-800'; break;
+                        case 'Fim de Semana': statusClass = 'bg-blue-100 text-blue-800'; break;
+                        default: statusClass = 'bg-gray-100 text-gray-800'; // Folga
+                    }
+
+                    let balanceClass = '';
+                    if (day.balance_hours) {
+                        if (day.balance_hours.startsWith('-')) {
+                            balanceClass = 'text-red-500';
+                        } else if (day.balance_hours !== '+00:00') {
+                            balanceClass = 'text-green-500';
+                        }
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-700">${formattedDate}</td>
+                            <td class="px-4 py-3 text-sm"><span class="px-2 py-1 text-xs font-medium rounded-full ${statusClass}">${day.status}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${day.worked_hours === '+00:00' ? '-' : day.worked_hours}</td>
+                            <td class="px-4 py-3 text-sm font-medium ${balanceClass}">${day.balance_hours || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Erro ao carregar banco de horas: ${e.message}</td></tr>`;
+                console.error(e);
+            }
+        }
+
+        // Carrega o histórico ao abrir a página
+        loadHistory();
+    </script>
+</body>
+</html>
